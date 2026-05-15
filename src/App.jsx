@@ -17,17 +17,17 @@ const MEMBER_LIST = [
   { name: "윤혜린", part: "Alt", role: "" },
   { name: "이해민", part: "Alt", role: "" },
   { name: "정현진", part: "Alt", role: "" },
-  { name: "김예원", part: "Alt", role: "idk" },
-  { name: "정지요", part: "Alt", role: "idk" },
-  { name: "윤희원", part: "Alt", role: "idk" }, // Alt
+  { name: "김예원", part: "Alt", role: "" }, // idk
+  { name: "정지요", part: "Alt", role: "" }, // idk
+  { name: "윤희원", part: "Alt", role: "" }, // idk // Alt
   { name: "김소이", part: "Sop", role: "" },
   { name: "김정현", part: "Sop", role: "" },
   { name: "이경미", part: "Sop", role: "" },
   { name: "이아영", part: "Sop", role: "" },
   { name: "정진희", part: "Sop", role: "" },
   { name: "김수빈", part: "Sop", role: "" },
-  { name: "김은선", part: "Sop", role: "idk" },
-  { name: "이혜린", part: "Sop", role: "idk" }, // Sop
+  { name: "김은선", part: "Sop", role: "" }, // idk 
+  { name: "이혜린", part: "Sop", role: "" }, // idk // Sop
   { name: "강은수", part: "🎹", role: "piano" },
   { name: "정선미", part: "🎹", role: "piano" },
   { name: "이채은", part: "🎹", role: "piano" },
@@ -349,7 +349,7 @@ function App() {
             {LEADER_TOGETHER_PAIRS.length > 0 && (
               <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl">
                 <div className="font-bold mb-1">
-                  🔗 리더 픽 (우선 결합) 가상 데이터:
+                  👑 팀장 픽 (우선 결합) 가상 데이터:
                 </div>
                 <ul className="list-disc list-inside space-y-1">
                   {LEADER_TOGETHER_PAIRS.map((pair, idx) => (
