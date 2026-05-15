@@ -391,7 +391,7 @@ function App() {
             {/* 배제 조합(EXCLUSION_PAIRS) 표시 로직 */}
             {EXCLUSION_PAIRS.length > 0 && (
               <div className="bg-pink-50 border border-pink-200 text-pink-700 px-4 py-3 rounded-xl">
-                <strong>🚫 배제 리더:</strong>{" "}
+                <strong>🚫 제한 조건:</strong>{" "}
                 {EXCLUSION_PAIRS.map((p) => p.join(" ≠ ")).join(" | ")}
               </div>
             )}
