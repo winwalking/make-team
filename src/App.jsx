@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-
+import choirBoy from './assets/choir_boy.png'; 
+import choirGirl from './assets/choir_girl.png';
 const MEMBER_LIST = [
   { name: "김은석", part: "Bas", role: "" },
   { name: "이동현", part: "Bas", role: "" },
@@ -632,7 +633,7 @@ function App() {
           {/* 왼쪽 하단 어린이 */}
           <div className="animate-praise-custom origin-bottom">
             <img
-              src="src\assets\choir_girl.png.png"
+              src={choirGirl}
               alt="찬양하는 소녀"
               className="w-28 h-auto md:w-24 lg:w-40 scale-x-[-1]"
             />
@@ -644,7 +645,7 @@ function App() {
             style={{ animationDelay: "0.2s" }}
           >
             <img
-              src="src\assets\choir_boy.png.png"
+              src={choirBoy}
               alt="찬양하는 소년"
               className="w-28 h-auto md:w-24 lg:w-40" // 좌우 반전
             />
