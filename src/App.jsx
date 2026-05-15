@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import choirBoy from './assets/choir_boy.png'; 
 import choirGirl from './assets/choir_girl.png';
+
 const MEMBER_LIST = [
   { name: "김은석", part: "Bas", role: "" },
   { name: "이동현", part: "Bas", role: "" },
@@ -347,7 +348,7 @@ function App() {
             {/* 리더 픽(LEADER_TOGETHER_PAIRS) 표시 로직 */}
             {LEADER_TOGETHER_PAIRS.length > 0 && (
               <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl">
-                <div className="font-bold mb-1">🔗 리더 픽 (우선 결합):</div>
+                <div className="font-bold mb-1">🔗 리더 픽 (우선 결합) 가상 데이터:</div>
                 <ul className="list-disc list-inside space-y-1">
                   {LEADER_TOGETHER_PAIRS.map((pair, idx) => (
                     <li key={idx}>
@@ -366,7 +367,7 @@ function App() {
               <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-4 rounded-2xl">
                 <div className="flex items-center gap-2 font-bold mb-2 text-emerald-700">
                   <span>💚</span>
-                  <span>단원 픽 (조건 결합):</span>
+                  <span>단원 픽 (조건 결합) 가상 데이터:</span>
                 </div>
                 <ul className="space-y-1.5 ml-1">
                   {TOGETHER_PAIRS.map((pair, idx) => (
