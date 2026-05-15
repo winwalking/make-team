@@ -59,6 +59,7 @@ function App() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [animationPhase, setAnimationPhase] = useState(0);
+  const [openStatsGroupId, setOpenStatsGroupId] = useState(null);
 
   const fetchNames = async () => {
     try {
@@ -97,98 +98,117 @@ function App() {
     }
   };
 
-const assignToGroups = (members, leaderTogetherPairs, togetherPairs, exclusionPairs) => {
-  const numberOfGroups = 3;
-  const partOrder = { Sop: 1, Alt: 2, Ten: 3, Bas: 4 };
-  let attempts = 0;
+  const assignToGroups = (
+    members,
+    leaderTogetherPairs,
+    togetherPairs,
+    exclusionPairs,
+  ) => {
+    const numberOfGroups = 3;
+    const partOrder = { Sop: 1, Alt: 2, Ten: 3, Bas: 4 };
+    let attempts = 0;
 
-  while (attempts < 5000) {
-    attempts++;
-    const tempGroups = Array.from({ length: numberOfGroups }, (_, i) => ({
-      id: i + 1,
-      members: [],
-      partsCount: { Sop: 0, Alt: 0, Ten: 0, Bas: 0 },
-      hasPiano: false,
-      idkCount: 0,
-    }));
+    while (attempts < 5000) {
+      attempts++;
+      const tempGroups = Array.from({ length: numberOfGroups }, (_, i) => ({
+        id: i + 1,
+        members: [],
+        partsCount: { Sop: 0, Alt: 0, Ten: 0, Bas: 0 },
+        hasPiano: false,
+        idkCount: 0,
+      }));
 
-    const shuffledMembers = [...members].sort(() => Math.random() - 0.5);
-    const assignedNames = new Set();
+      const shuffledMembers = [...members].sort(() => Math.random() - 0.5);
+      const assignedNames = new Set();
 
-    // [1순위] 리더 픽 배정 (LEADER_TOGETHER_PAIRS)
-    leaderTogetherPairs.forEach((pair, idx) => {
-      const targetGroup = tempGroups[idx % numberOfGroups];
-      pair.forEach((name) => {
-        const m = shuffledMembers.find((member) => member.name === name);
-        if (m && !assignedNames.has(name)) {
-          if (m.role === "piano") targetGroup.hasPiano = true;
-          if (m.role === "idk") targetGroup.idkCount++;
-          targetGroup.members.push(m);
-          targetGroup.partsCount[m.part]++;
-          assignedNames.add(name);
-        }
+      // [1순위] 리더 픽 배정 (LEADER_TOGETHER_PAIRS)
+      leaderTogetherPairs.forEach((pair, idx) => {
+        const targetGroup = tempGroups[idx % numberOfGroups];
+        pair.forEach((name) => {
+          const m = shuffledMembers.find((member) => member.name === name);
+          if (m && !assignedNames.has(name)) {
+            if (m.role === "piano") targetGroup.hasPiano = true;
+            if (m.role === "idk") targetGroup.idkCount++;
+            targetGroup.members.push(m);
+            targetGroup.partsCount[m.part]++;
+            assignedNames.add(name);
+          }
+        });
       });
-    });
 
-    // [2순위] 배제 조합 처리 (EXCLUSION_PAIRS)
-    // 배제 대상자들이 이미 리더픽으로 흩어졌는지 확인하고, 안 흩어졌다면 강제로 다른 조에 배정
-    exclusionPairs.forEach((exPair) => {
-      exPair.forEach((name, idx) => {
-        if (assignedNames.has(name)) return; // 이미 리더픽으로 배정됐다면 패스
+      // [2순위] 배제 조합 처리 (EXCLUSION_PAIRS)
+      // 배제 대상자들이 이미 리더픽으로 흩어졌는지 확인하고, 안 흩어졌다면 강제로 다른 조에 배정
+      exclusionPairs.forEach((exPair) => {
+        exPair.forEach((name, idx) => {
+          if (assignedNames.has(name)) return; // 이미 리더픽으로 배정됐다면 패스
 
-        const m = shuffledMembers.find((member) => member.name === name);
-        if (m) {
-          // 배제 인원이 들어갈 수 있는 조 찾기 (해당 조에 이 배제 조합의 다른 인원이 없어야 함)
-          const targetGroup = tempGroups.find(g => 
-            !exPair.some(exName => g.members.some(member => member.name === exName))
-          ) || tempGroups.sort((a, b) => a.members.length - b.members.length)[0];
+          const m = shuffledMembers.find((member) => member.name === name);
+          if (m) {
+            // 배제 인원이 들어갈 수 있는 조 찾기 (해당 조에 이 배제 조합의 다른 인원이 없어야 함)
+            const targetGroup =
+              tempGroups.find(
+                (g) =>
+                  !exPair.some((exName) =>
+                    g.members.some((member) => member.name === exName),
+                  ),
+              ) ||
+              tempGroups.sort((a, b) => a.members.length - b.members.length)[0];
 
-          if (m.role === "piano") targetGroup.hasPiano = true;
-          if (m.role === "idk") targetGroup.idkCount++;
-          targetGroup.members.push(m);
-          targetGroup.partsCount[m.part]++;
-          assignedNames.add(name);
-        }
+            if (m.role === "piano") targetGroup.hasPiano = true;
+            if (m.role === "idk") targetGroup.idkCount++;
+            targetGroup.members.push(m);
+            targetGroup.partsCount[m.part]++;
+            assignedNames.add(name);
+          }
+        });
       });
-    });
 
-    // [3순위] 단원 픽 배정 (TOGETHER_PAIRS)
-    togetherPairs.forEach((pair) => {
-      const pairMembers = pair.map(n => shuffledMembers.find(m => m.name === n)).filter(Boolean);
-      const hasPianoInPair = pairMembers.some(m => m.role === "piano");
+      // [3순위] 단원 픽 배정 (TOGETHER_PAIRS)
+      togetherPairs.forEach((pair) => {
+        const pairMembers = pair
+          .map((n) => shuffledMembers.find((m) => m.name === n))
+          .filter(Boolean);
+        const hasPianoInPair = pairMembers.some((m) => m.role === "piano");
 
-      // 1. 기존 배정된 사람 있는지 확인
-      let targetGroup = tempGroups.find(g => pair.some(n => g.members.some(m => m.name === n)));
+        // 1. 기존 배정된 사람 있는지 확인
+        let targetGroup = tempGroups.find((g) =>
+          pair.some((n) => g.members.some((m) => m.name === n)),
+        );
 
-      // 2. 배제 조합과 충돌하는지 확인 로직 추가
-      if (!targetGroup) {
-        targetGroup = tempGroups
-          .filter(g => {
-            const groupNames = g.members.map(m => m.name);
-            // 이 조에 들어갔을 때 배제 조합(EXCLUSION_PAIRS) 중 한 곳이라도 겹치면 제외
-            const conflictEx = exclusionPairs.some(ex => 
-              pair.some(pName => ex.includes(pName)) && ex.some(exName => groupNames.includes(exName))
-            );
-            const pianoConflict = hasPianoInPair && g.hasPiano;
-            return !conflictEx && !pianoConflict;
-          })
-          .sort((a, b) => a.members.length - b.members.length)[0];
-      }
-
-      // 조를 못 찾았다면 가장 널널한 조로 (이 경우 주황색 창 안내 발생)
-      if (!targetGroup) targetGroup = tempGroups.sort((a, b) => a.members.length - b.members.length)[0];
-
-      pair.forEach((name) => {
-        const m = shuffledMembers.find((member) => member.name === name);
-        if (m && !assignedNames.has(name)) {
-          if (m.role === "piano") targetGroup.hasPiano = true;
-          if (m.role === "idk") targetGroup.idkCount++;
-          targetGroup.members.push(m);
-          targetGroup.partsCount[m.part]++;
-          assignedNames.add(name);
+        // 2. 배제 조합과 충돌하는지 확인 로직 추가
+        if (!targetGroup) {
+          targetGroup = tempGroups
+            .filter((g) => {
+              const groupNames = g.members.map((m) => m.name);
+              // 이 조에 들어갔을 때 배제 조합(EXCLUSION_PAIRS) 중 한 곳이라도 겹치면 제외
+              const conflictEx = exclusionPairs.some(
+                (ex) =>
+                  pair.some((pName) => ex.includes(pName)) &&
+                  ex.some((exName) => groupNames.includes(exName)),
+              );
+              const pianoConflict = hasPianoInPair && g.hasPiano;
+              return !conflictEx && !pianoConflict;
+            })
+            .sort((a, b) => a.members.length - b.members.length)[0];
         }
+
+        // 조를 못 찾았다면 가장 널널한 조로 (이 경우 주황색 창 안내 발생)
+        if (!targetGroup)
+          targetGroup = tempGroups.sort(
+            (a, b) => a.members.length - b.members.length,
+          )[0];
+
+        pair.forEach((name) => {
+          const m = shuffledMembers.find((member) => member.name === name);
+          if (m && !assignedNames.has(name)) {
+            if (m.role === "piano") targetGroup.hasPiano = true;
+            if (m.role === "idk") targetGroup.idkCount++;
+            targetGroup.members.push(m);
+            targetGroup.partsCount[m.part]++;
+            assignedNames.add(name);
+          }
+        });
       });
-    });
 
       // [4순위] 남은 반주자 및 나머지 인원 배정
       const remainingPianos = shuffledMembers.filter(
@@ -266,8 +286,34 @@ const assignToGroups = (members, leaderTogetherPairs, togetherPairs, exclusionPa
               isIdk: m.role === "idk",
             })),
         }));
-    }
+      const isBalanced = tempGroups.every((g) => {
+        const total = g.members.length;
+        if (total === 0) return true;
+
+        // 1. 파트별 과밀 체크 (한 파트가 조 인원의 50%를 넘지 않도록, 인원이 적을 땐 최소 3명 기준)
+        const partOverload = Object.values(g.partsCount).some(
+          (count) => count > Math.max(2, total * 0.5),
+        );
+
+        // 2. 반주자 과밀 체크 (한 조에 반주자가 너무 몰리지 않게)
+        const pianoCount = g.members.filter((m) => m.role === "piano").length;
+        const pianoOverload = pianoCount > 1 && pianoCount > total * 0.3;
+
+        return !partOverload && !pianoOverload;
+      });
+
+      // 조건을 만족하거나, 시도 횟수가 너무 많아지면 반환
+      if (isBalanced || attempts > 4999) {
+        return tempGroups
+          .sort((a, b) => a.id - b.id)
+          .map((g) => ({
+            ...g,
+            // ... (멤버 정렬 및 아이콘 부여 로직 동일)
+          }));
+      }
+    } // while 끝
   };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-indigo-200 py-12">
       <style>{`
@@ -285,6 +331,152 @@ const assignToGroups = (members, leaderTogetherPairs, togetherPairs, exclusionPa
           <h2 className="text-xl text-center text-indigo-500 mb-8">
             찬양발표회 조 편성
           </h2>
+
+          {/* 개발 모드 안내 섹션 */}
+          <div className="space-y-3 mb-8 text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-800 font-bold px-4 py-3 rounded-xl">
+              <span>* 하기 안내사항들을 실 운영 시 삭제할 예정입니다</span>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-xl">
+              <strong>🛠 개발 모드:</strong> 참여 인원 데이터를 기반으로 조를
+              편성합니다.
+            </div>
+
+            {/* 리더 픽(LEADER_TOGETHER_PAIRS) 표시 로직 */}
+            {LEADER_TOGETHER_PAIRS.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl">
+                <div className="font-bold mb-1">🔗 리더 픽 (우선 결합):</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {LEADER_TOGETHER_PAIRS.map((pair, idx) => (
+                    <li key={idx}>
+                      <span className="font-bold text-indigo-600">
+                        {pair[0]}
+                      </span>
+                      의 픽: {pair.slice(1).join(", ")}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 개인 단원 선호 픽(TOGETHER_PAIRS) 표시 로직 */}
+            {TOGETHER_PAIRS.length > 0 && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-4 rounded-2xl">
+                <div className="flex items-center gap-2 font-bold mb-2 text-emerald-700">
+                  <span>💚</span>
+                  <span>단원 픽 (조건 결합):</span>
+                </div>
+                <ul className="space-y-1.5 ml-1">
+                  {TOGETHER_PAIRS.map((pair, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-emerald-400 mt-1 text-[10px]">
+                        ●
+                      </span>
+                      <div className="leading-tight">
+                        <span className="font-bold text-emerald-600">
+                          {pair[0]}
+                        </span>
+                        <span className="text-emerald-700/80 mx-1">의 픽:</span>
+                        <span className="font-medium">
+                          {pair.slice(1).join(", ")}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 배제 조합(EXCLUSION_PAIRS) 표시 로직 */}
+            {EXCLUSION_PAIRS.length > 0 && (
+              <div className="bg-pink-50 border border-pink-200 text-pink-700 px-4 py-3 rounded-xl">
+                <strong>🚫 배제 리더:</strong>{" "}
+                {EXCLUSION_PAIRS.map((p) => p.join(" ≠ ")).join(" | ")}
+              </div>
+            )}
+
+            {/* 파트 쏠림 사유 안내 (결과가 있을 때만 노출) */}
+            {groups.some((g) =>
+              Object.values(g.partsCount).some((count) => count >= 4),
+            ) && (
+              <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-xl animate-pulse">
+                <strong>⚠️ 파트 불균형 안내:</strong> 리더 및 개인 픽(우선 결합)
+                조건 충족을 위해 특정 조의 파트 밸런스가 조정되었습니다.
+              </div>
+            )}
+
+            {/* 파트 불균형 및 조건 조정 상세 안내 */}
+            {groups.length > 0 &&
+              (() => {
+                const issues = [];
+
+                // 1. 구체적인 파트 쏠림 분석
+                groups.forEach((g) => {
+                  Object.entries(g.partsCount).forEach(([part, count]) => {
+                    if (count >= 4) {
+                      issues.push(
+                        `${g.id}조에 ${part} 파트가 ${count}명 배정됨`,
+                      );
+                    }
+                  });
+                });
+
+                // 2. 구체적인 픽 조정 분석 (LEADER_TOGETHER_PAIRS + TOGETHER_PAIRS 통합 체크)
+                const allPairs = [...LEADER_TOGETHER_PAIRS, ...TOGETHER_PAIRS];
+                allPairs.forEach((pair) => {
+                  const leaderName = pair[0];
+                  // 리더(또는 기준점)가 속한 조 찾기
+                  const assignedGroup = groups.find((g) =>
+                    g.members.some((m) => m.name === leaderName),
+                  );
+
+                  if (assignedGroup) {
+                    const groupNames = assignedGroup.members.map((m) => m.name);
+                    // 같이 픽한 멤버 중 누락된 사람 찾기
+                    const missingMembers = pair
+                      .slice(1)
+                      .filter((name) => !groupNames.includes(name));
+
+                    if (missingMembers.length > 0) {
+                      issues.push(
+                        `${leaderName}님의 픽 중 [${missingMembers.join(", ")}] 조정됨`,
+                      );
+                    }
+                  }
+                });
+
+                // 이슈가 하나라도 있을 때만 렌더링
+                if (issues.length > 0) {
+                  return (
+                    <div className="bg-orange-50 border border-orange-200 text-orange-800 px-5 py-4 rounded-2xl shadow-sm animate-fade-in">
+                      <div className="flex items-center gap-2 font-bold mb-3 text-orange-700">
+                        <span className="text-lg">🌿</span>
+                        <span>편성 최적화 상세 내역</span>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs text-orange-600 mb-2">
+                          * 설정된 우선 결합 조건과 조별 정원 제한이 충돌할 경우
+                          시스템이 자동으로 조율한 내역입니다.
+                        </p>
+                        <ul className="space-y-1.5">
+                          {issues.map((issue, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>
+                              <span className="font-medium">{issue}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+          </div>
 
           <div className="text-center mb-8">
             {isAnimating ? (
@@ -375,6 +567,62 @@ const assignToGroups = (members, leaderTogetherPairs, togetherPairs, exclusionPa
                       </li>
                     ))}
                   </ul>
+                  <div className="mt-auto pt-2 border-t border-indigo-50 relative">
+                    <button
+                      onClick={() =>
+                        setOpenStatsGroupId(
+                          openStatsGroupId === group.id ? null : group.id,
+                        )
+                      }
+                      className="w-full flex items-center justify-center gap-1 text-[11px] font-bold text-indigo-400 hover:text-indigo-600 transition-colors"
+                    >
+                      {openStatsGroupId === group.id
+                        ? "통계 닫기 ▲"
+                        : "파트별 통계 보기 ▼"}
+                    </button>
+
+                    {/* 팝업 UI */}
+                    {openStatsGroupId === group.id && (
+                      <div className="absolute bottom-full left-0 w-full mb-2 bg-white/95 backdrop-blur-sm border border-indigo-200 rounded-xl shadow-xl p-3 z-20 animate-fade-in-up">
+                        <div className="text-[10px] font-bold text-indigo-300 mb-2 text-center uppercase tracking-wider">
+                          파트별 인원
+                        </div>
+                        {/* 팝업 UI 내부 */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(group.partsCount)
+                            .filter(([part]) => part.toLowerCase() !== "🎹") // piano라는 이름의 키는 제외
+                            .map(([part, count]) => (
+                              <div
+                                key={part}
+                                className="flex items-center justify-between bg-indigo-50/50 px-2 py-1.5 rounded-md"
+                              >
+                                <span className="text-xs font-bold text-indigo-600">
+                                  {part}
+                                </span>
+                                <span className="text-xs font-black text-slate-700">
+                                  {count}명
+                                </span>
+                              </div>
+                            ))}
+
+                          {/* 2. 반주자 인원 (role이 "piano"인 멤버 필터링) */}
+                          <div className="flex items-center justify-between bg-purple-50/50 px-2 py-1.5 rounded-md border border-purple-100">
+                            <span className="text-xs font-bold text-purple-600 flex items-center gap-1">
+                              <span className="hidden sm:inline">반주자</span>
+                            </span>
+                            <span className="text-xs font-black text-slate-700">
+                              {
+                                group.members.filter(
+                                  (m) => m.role === "piano" || m.icon === "🎹",
+                                ).length
+                              }
+                              명
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
