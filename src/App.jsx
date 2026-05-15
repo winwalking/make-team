@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import choirBoy from './assets/choir_boy.png'; 
-import choirGirl from './assets/choir_girl.png';
+import choirBoy from "./assets/choir_boy.png";
+import choirGirl from "./assets/choir_girl.png";
 
 const MEMBER_LIST = [
   { name: "김은석", part: "Bas", role: "" },
@@ -348,7 +348,9 @@ function App() {
             {/* 리더 픽(LEADER_TOGETHER_PAIRS) 표시 로직 */}
             {LEADER_TOGETHER_PAIRS.length > 0 && (
               <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl">
-                <div className="font-bold mb-1">🔗 리더 픽 (우선 결합) 가상 데이터:</div>
+                <div className="font-bold mb-1">
+                  🔗 리더 픽 (우선 결합) 가상 데이터:
+                </div>
                 <ul className="list-disc list-inside space-y-1">
                   {LEADER_TOGETHER_PAIRS.map((pair, idx) => (
                     <li key={idx}>
@@ -630,7 +632,12 @@ function App() {
             </div>
           )}
         </div>
-        <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-50 flex justify-between">
+        <div
+          className="fixed left-0 right-0 pointer-events-none z-50 flex justify-between"
+          style={{
+            bottom: -15,
+          }}
+        >
           {/* 왼쪽 하단 어린이 */}
           <div className="animate-praise-custom origin-bottom">
             <img
