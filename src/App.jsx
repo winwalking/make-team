@@ -628,6 +628,28 @@ function App() {
             </div>
           )}
         </div>
+        <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-50 flex justify-between">
+          {/* 왼쪽 하단 어린이 */}
+          <div className="animate-praise-custom origin-bottom">
+            <img
+              src="src\assets\choir_girl.png.png"
+              alt="찬양하는 소녀"
+              className="w-28 h-auto md:w-24 lg:w-40 scale-x-[-1]"
+            />
+          </div>
+
+          {/* 오른쪽 하단 어린이 */}
+          <div
+            className="animate-praise-custom origin-bottom"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <img
+              src="src\assets\choir_boy.png.png"
+              alt="찬양하는 소년"
+              className="w-28 h-auto md:w-24 lg:w-40" // 좌우 반전
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

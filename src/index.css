@@ -1,1 +1,12 @@
 @import "tailwindcss";
+/* index.css 또는 App.css */
+
+@keyframes praise-bounce {
+  0%, 100% { transform: scale(1, 1) translateY(0); }
+  50% { transform: scale(0.9, 1.1) translateY(-15px); }
+}
+
+.animate-praise-custom {
+  animation: praise-bounce 1.5s ease-in-out infinite;
+  transform-origin: bottom; /* 발바닥을 바닥에 고정하고 위로 늘어나게 함 */
+}
