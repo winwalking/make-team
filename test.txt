@@ -1,20 +1,5 @@
 import React, { useState } from "react";
 
-// 1. 데이터를 함수 외부에서 관리 (에러 방지 및 유지보수 용이)
-const MEMBER_LIST = [
-  { name: "김민준", part: "Bas" }, { name: "이서준", part: "Bas" },
-  { name: "정지호", part: "Bas" }, { name: "박서연", part: "Sop" },
-  { name: "최윤서", part: "Sop" }, { name: "정지윤", part: "Sop" },
-  { name: "장도윤", part: "Ten" }, { name: "오유준", part: "Ten" },
-  { name: "이준우", part: "Ten" }, { name: "김하린", part: "Alt" },
-  { name: "홍승아", part: "Alt" }, { name: "김사랑", part: "Alt" },
-  { name: "이유진", part: "Sop" }, { name: "박민서", part: "Alt" },
-  { name: "최지우", part: "Ten" },
-];
-
-const TOGETHER_PAIRS = [["김민준", "박서연"]]; // 필수 조합
-const EXCLUSION_PAIRS = [["이서준", "정지호"]]; // 배제 조합
-
 function App() {
   const [groups, setGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,13 +16,39 @@ function App() {
       setShowResults(false);
       setAnimationPhase(1);
 
+      // 1. 로컬 데이터 설정 (이름 및 파트)
+      const memberList = [
+        { name: "김민준", part: "Bas" },
+        { name: "이서준", part: "Bas" },
+        { name: "정지호", part: "Bas" },
+        { name: "박서연", part: "Sop" },
+        { name: "최윤서", part: "Sop" },
+        { name: "정지윤", part: "Sop" },
+        { name: "장도윤", part: "Ten" },
+        { name: "오유준", part: "Ten" },
+        { name: "이준우", part: "Ten" },
+        { name: "김하린", part: "Alt" },
+        { name: "홍승아", part: "Alt" },
+        { name: "김사랑", part: "Alt" },
+        { name: "이유진", part: "Sop" },
+        { name: "박민서", part: "Alt" },
+        { name: "최지우", part: "Ten" },
+      ];
+
+      // 함께 하고 싶은 조합 (이름 쌍)
+      const togetherPairs = [
+        ["김민준", "박서연"], // 예: 커플이나 단짝
+      ];
+
+      // 배제 조합 (함께 하면 안 되는 쌍)
+      const exclusionPairs = [["이서준", "정지호"]];
+
       const assignedGroups = assignToGroups(
-        MEMBER_LIST,
-        TOGETHER_PAIRS,
-        EXCLUSION_PAIRS
+        memberList,
+        togetherPairs,
+        exclusionPairs,
       );
 
-      // 애니메이션 연출을 위한 타이머
       setTimeout(() => {
         setGroups(assignedGroups);
         setAnimationPhase(2);
@@ -59,12 +70,16 @@ function App() {
 
   const assignToGroups = (members, togetherPairs, exclusionPairs) => {
     const numberOfGroups = 3;
-    const partOrder = { Sop: 1, Alt: 2, Ten: 3, Bas: 4 };
     let attempts = 0;
     const maxAttempts = 5000;
 
+    // 파트별 정렬 우선순위 정의
+    const partOrder = { Sop: 1, Alt: 2, Ten: 3, Bas: 4 };
+
     while (attempts < maxAttempts) {
       attempts++;
+
+      // 1. 결과 그룹 초기화
       const tempGroups = Array.from({ length: numberOfGroups }, (_, i) => ({
         id: i + 1,
         members: [],
@@ -74,12 +89,19 @@ function App() {
       const shuffledMembers = [...members].sort(() => Math.random() - 0.5);
       const assignedNames = new Set();
 
-      // 필수 조합 배정
+      // 2. [필수 조합 처리] 함께 해야 하는 팀 먼저 배정
       for (const [name1, name2] of togetherPairs) {
         const m1 = shuffledMembers.find((m) => m.name === name1);
         const m2 = shuffledMembers.find((m) => m.name === name2);
-        if (m1 && m2 && !assignedNames.has(name1) && !assignedNames.has(name2)) {
-          const targetGroup = tempGroups[Math.floor(Math.random() * numberOfGroups)];
+
+        if (
+          m1 &&
+          m2 &&
+          !assignedNames.has(name1) &&
+          !assignedNames.has(name2)
+        ) {
+          const targetGroup =
+            tempGroups[Math.floor(Math.random() * numberOfGroups)];
           targetGroup.members.push(m1, m2);
           targetGroup.partsCount[m1.part]++;
           targetGroup.partsCount[m2.part]++;
@@ -88,22 +110,39 @@ function App() {
         }
       }
 
-      // 파트별 균등 배정
+      // 3. [파트별 균등 분배] 남은 인원 파트별로 쪼개기
       const parts = ["Sop", "Alt", "Ten", "Bas"];
       let isValid = true;
 
       for (const part of parts) {
-        const partMembers = shuffledMembers.filter(m => m.part === part && !assignedNames.has(m.name));
-        for (const member of partMembers) {
-          tempGroups.sort((a, b) => a.partsCount[part] - b.partsCount[part] || a.members.length - b.members.length);
-          const targetGroup = tempGroups[0];
+        const partMembers = shuffledMembers.filter(
+          (m) => m.part === part && !assignedNames.has(m.name),
+        );
 
-          const willBreakExclusion = exclusionPairs.some(([ex1, ex2]) => 
-            (member.name === ex1 && targetGroup.members.some(m => m.name === ex2)) ||
-            (member.name === ex2 && targetGroup.members.some(m => m.name === ex1))
+        for (const member of partMembers) {
+          // 해당 파트가 가장 적은 그룹을 찾아 우선 배정 (균등 분배 핵심)
+          tempGroups.sort(
+            (a, b) =>
+              a.partsCount[part] - b.partsCount[part] ||
+              a.members.length - b.members.length,
           );
 
-          if (willBreakExclusion) { isValid = false; break; }
+          const targetGroup = tempGroups[0];
+
+          // 제약 조건 체크 (배제 조합)
+          const willBreakExclusion = exclusionPairs.some(
+            ([ex1, ex2]) =>
+              (member.name === ex1 &&
+                targetGroup.members.some((m) => m.name === ex2)) ||
+              (member.name === ex2 &&
+                targetGroup.members.some((m) => m.name === ex1)),
+          );
+
+          if (willBreakExclusion) {
+            isValid = false;
+            break;
+          }
+
           targetGroup.members.push(member);
           targetGroup.partsCount[part]++;
           assignedNames.add(member.name);
@@ -111,16 +150,32 @@ function App() {
         if (!isValid) break;
       }
 
+      // 모든 조건 만족 시 결과 반환
       if (isValid) {
-        return tempGroups.sort((a, b) => a.id - b.id).map(g => ({
-          ...g,
-          members: [...g.members]
-            .sort((a, b) => partOrder[a.part] - partOrder[b.part] || a.name.localeCompare(b.name, "ko"))
-            .map(m => `${m.name} (${m.part})`)
-        }));
+        console.log(`${attempts}번 시도 끝에 편성 완료`);
+        return tempGroups
+          .sort((a, b) => a.id - b.id)
+          .map((g) => {
+            // 1. 멤버 객체들을 정렬 (파트 순 -> 이름 순)
+            const sortedMembers = [...g.members].sort((a, b) => {
+              if (partOrder[a.part] !== partOrder[b.part]) {
+                return partOrder[a.part] - partOrder[b.part];
+              }
+              return a.name.localeCompare(b.name, "ko");
+            });
+
+            // 2. 정렬된 객체를 문자열 포맷으로 변환
+            return {
+              ...g,
+              members: sortedMembers.map((m) => `${m.name} (${m.part})`),
+            };
+          });
       }
     }
-    throw new Error("조건을 만족하는 편성이 어렵습니다.");
+
+    throw new Error(
+      "조건을 만족하는 조 편성이 어렵습니다. 필수/배제 조합을 확인해주세요.",
+    );
   };
 
   return (
@@ -134,27 +189,26 @@ function App() {
 
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-3xl shadow-xl p-8 border-4 border-indigo-300">
-          <h1 className="text-3xl font-bold text-center text-indigo-600 mb-2">청년성가대 🎶</h1>
-          <h2 className="text-xl text-center text-indigo-500 mb-8">찬양발표회 조 편성</h2>
-
-          {/* 개발 모드 안내 섹션 */}
-          <div className="space-y-3 mb-8 text-sm">
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-xl">
-              <strong>🛠 개발 모드:</strong> 임시 데이터를 사용 중입니다.
+          <h1 className="text-3xl font-bold text-center text-indigo-600 mb-2">
+            성가찬양발표회 🎶
+          </h1>
+          <h2 className="text-xl text-center text-indigo-500 mb-8">
+            파트별 균형 조 편성 (3개조)
+          </h2>
+          {
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-xl mb-6">
+              <strong>개발 모드:</strong> 임시 데이터를 사용합니다.
             </div>
-            
-            {TOGETHER_PAIRS.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl">
-                <strong>🔗 필수 결합:</strong> {TOGETHER_PAIRS.map(p => `${p[0]} ↔ ${p[1]}`).join(", ")}
-              </div>
-            )}
+          }
 
-            {EXCLUSION_PAIRS.length > 0 && (
-              <div className="bg-pink-50 border border-pink-200 text-pink-700 px-4 py-3 rounded-xl">
-                <strong>🚫 배제 조합:</strong> {EXCLUSION_PAIRS.map(p => `${p[0]} ↔ ${p[1]}`).join(", ")}
-              </div>
-            )}
-          </div>
+          {/* {togetherPairs.length > 0 && (
+            <div className="bg-pink-50 border border-pink-200 text-pink-700 px-4 py-3 rounded-xl mb-6">
+              <strong>배제 조합:</strong>{" "}
+              {togetherPairs
+                .map((pair, idx) => `${pair[0]} ↔ ${pair[1]}`)
+                .join(", ")}
+            </div>
+          )} */}
 
           <div className="text-center mb-8">
             {isAnimating ? (
@@ -181,24 +235,38 @@ function App() {
                 <div className="w-20 h-32 mx-auto bg-gradient-to-b from-transparent via-white to-purple-200 rounded-full shadow-lg"></div>
               </div>
             ) : (
-              <button onClick={fetchNames} disabled={isLoading} className="px-8 py-4 rounded-full text-white font-bold text-lg bg-indigo-500 hover:bg-indigo-600 active:scale-95 shadow-lg transition-all">
+              <button
+                onClick={fetchNames}
+                disabled={isLoading}
+                className="px-8 py-4 rounded-full text-white font-bold text-lg bg-indigo-500 hover:bg-indigo-600 active:scale-95 shadow-lg transition-all"
+              >
                 ✨ 조 편성 시작 ✨
               </button>
             )}
           </div>
 
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">{error}</div>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+              {error}
+            </div>
+          )}
 
           {groups.length > 0 && showResults && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
               {groups.map((group) => (
-                <div key={group.id} className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-4 border-2 border-indigo-100 shadow-md">
+                <div
+                  key={group.id}
+                  className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-4 border-2 border-indigo-100 shadow-md"
+                >
                   <h3 className="text-lg font-bold text-indigo-700 mb-3 text-center border-b pb-2">
                     단원 {group.id}조 ({group.members.length}명)
                   </h3>
                   <ul className="space-y-2">
                     {group.members.map((member, index) => (
-                      <li key={index} className="text-gray-700 bg-white border border-indigo-50 px-3 py-1.5 rounded-lg text-center text-sm font-medium">
+                      <li
+                        key={index}
+                        className="text-gray-700 bg-white border border-indigo-50 px-3 py-1.5 rounded-lg text-center text-sm font-medium"
+                      >
                         {member}
                       </li>
                     ))}
@@ -207,6 +275,9 @@ function App() {
               ))}
             </div>
           )}
+        </div>
+        <div className="mt-8 text-center text-sm text-purple-600">
+          <p>청년봉사선교회 IT부 © 2025 💖</p>
         </div>
       </div>
     </div>
